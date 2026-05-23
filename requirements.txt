@@ -1,0 +1,44 @@
+#Web Framework 
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+#CV Parsing 
+pymupdf==1.24.3
+
+#NLP 
+spacy==3.7.4
+# run after install: python -m spacy download en_core_web_sm
+transformers==4.41.0
+torch==2.3.0
+
+#Expert System
+experta==1.9.4          # PyKnow maintained fork (Python 3.x compatible)
+
+#Fuzzy Logic
+scikit-fuzzy==0.4.2
+numpy==1.26.4
+scipy==1.13.0
+
+#RAG 
+faiss-cpu==1.8.0
+langchain==0.2.1
+langchain-community==0.2.1
+langchain-huggingface==0.0.3
+sentence-transformers==3.0.0
+
+#Charts + PDF Report
+plotly==5.22.0
+matplotlib==3.9.0
+reportlab==4.2.0
+kaleido==0.2.1        
+
+#Email 
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+google-api-python-client==2.130.0
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.7.1
+httpx==0.27.0
