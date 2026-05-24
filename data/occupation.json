@@ -1,0 +1,94 @@
+{
+  "Software Engineer": {
+    "onet_code": "15-1252.00",
+    "required_skills": {
+      "python": {"weight": 0.9, "min_years": 2},
+      "java": {"weight": 0.7, "min_years": 2},
+      "javascript": {"weight": 0.7, "min_years": 1},
+      "c++": {"weight": 0.5, "min_years": 1},
+      "sql": {"weight": 0.8, "min_years": 1},
+      "git": {"weight": 0.9, "min_years": 1},
+      "docker": {"weight": 0.6, "min_years": 0},
+      "restapi": {"weight": 0.8, "min_years": 1},
+      "linux": {"weight": 0.7, "min_years": 0},
+      "aws": {"weight": 0.5, "min_years": 0}
+    },
+    "required_education": ["bachelors", "masters", "phd"],
+    "min_experience_years": 2,
+    "required_projects": 2
+  },
+  "Data Analyst": {
+    "onet_code": "15-2051.00",
+    "required_skills": {
+      "python": {"weight": 0.8, "min_years": 1},
+      "r": {"weight": 0.6, "min_years": 0},
+      "sql": {"weight": 0.95, "min_years": 2},
+      "excel": {"weight": 0.8, "min_years": 1},
+      "pandas": {"weight": 0.85, "min_years": 1},
+      "matplotlib": {"weight": 0.75, "min_years": 0},
+      "powerbi": {"weight": 0.7, "min_years": 0},
+      "tableau": {"weight": 0.7, "min_years": 0},
+      "statistics": {"weight": 0.9, "min_years": 0},
+      "data_wrangling": {"weight": 0.85, "min_years": 1}
+    },
+    "required_education": ["bachelors", "masters", "phd"],
+    "min_experience_years": 1,
+    "required_projects": 1
+  },
+  "Web Developer": {
+    "onet_code": "15-1254.00",
+    "required_skills": {
+      "html": {"weight": 0.95, "min_years": 1},
+      "css": {"weight": 0.9, "min_years": 1},
+      "javascript": {"weight": 0.95, "min_years": 2},
+      "react": {"weight": 0.8, "min_years": 1},
+      "nodejs": {"weight": 0.7, "min_years": 1},
+      "git": {"weight": 0.85, "min_years": 1},
+      "restapi": {"weight": 0.75, "min_years": 0},
+      "sql": {"weight": 0.6, "min_years": 0},
+      "typescript": {"weight": 0.6, "min_years": 0},
+      "docker": {"weight": 0.4, "min_years": 0}
+    },
+    "required_education": ["bachelors", "masters", "phd", "diploma"],
+    "min_experience_years": 1,
+    "required_projects": 3
+  },
+  "Cybersecurity Analyst": {
+    "onet_code": "15-1212.00",
+    "required_skills": {
+      "network_security": {"weight": 0.95, "min_years": 2},
+      "linux": {"weight": 0.85, "min_years": 1},
+      "python": {"weight": 0.7, "min_years": 1},
+      "pentesting": {"weight": 0.8, "min_years": 1},
+      "cryptography": {"weight": 0.75, "min_years": 0},
+      "siem": {"weight": 0.7, "min_years": 0},
+      "vulnerability_assessment": {"weight": 0.85, "min_years": 1},
+      "owasp": {"weight": 0.7, "min_years": 0},
+      "bash": {"weight": 0.65, "min_years": 1},
+      "sql": {"weight": 0.5, "min_years": 0}
+    },
+    "required_education": ["bachelors", "masters", "phd"],
+    "min_experience_years": 2,
+    "required_projects": 1
+  },
+  "Machine Learning Engineer": {
+    "onet_code": "15-2051.02",
+    "required_skills": {
+      "python": {"weight": 0.95, "min_years": 2},
+      "sklearn": {"weight": 0.85, "min_years": 1},
+      "tensorflow": {"weight": 0.8, "min_years": 1},
+      "pytorch": {"weight": 0.8, "min_years": 1},
+      "pandas": {"weight": 0.85, "min_years": 1},
+      "numpy": {"weight": 0.8, "min_years": 1},
+      "nlp": {"weight": 0.7, "min_years": 0},
+      "statistics": {"weight": 0.9, "min_years": 0},
+      "sql": {"weight": 0.65, "min_years": 0},
+      "mlops": {"weight": 0.6, "min_years": 0},
+      "docker": {"weight": 0.55, "min_years": 0},
+      "git": {"weight": 0.85, "min_years": 1}
+    },
+    "required_education": ["bachelors", "masters", "phd"],
+    "min_experience_years": 2,
+    "required_projects": 2
+  }
+}
