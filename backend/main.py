@@ -1,8 +1,3 @@
-"""
-main.py — HireWise FastAPI Backend
-All routes, startup logic, CORS, and orchestration.
-"""
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
@@ -13,7 +8,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# ── Local modules (stubbed until Day 2-5) ─────────────────
 from cv_parser import parse_cv
 from engine import evaluate_candidate
 from fuzzy import fuzzy_score
@@ -21,7 +15,6 @@ from rag import get_improvement_tips
 from report import generate_report
 from mailer import send_result_email
 
-# ──────────────────────────────────────────────────────────
 app = FastAPI(
     title="HireWise API",
     description="AI-powered recruitment expert system",
@@ -30,7 +23,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # tighten in production
+    allow_origins=["*"],          
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,32 +31,25 @@ app.add_middleware(
 
 PASS_THRESHOLD = float(os.getenv("PASS_THRESHOLD", 0.90))
 
-# ──────────────────────────────────────────────────────────
 # Pydantic Models
-# ──────────────────────────────────────────────────────────
-
 class JobRole(BaseModel):
     company_name: str
-    role_title: str                # must match one of the 5 covered roles
+    role_title: str                
     description: Optional[str] = ""
-    custom_rules: Optional[dict] = {}   # future: company-level rule overrides
+    custom_rules: Optional[dict] = {} 
 
 
 class EvaluationResult(BaseModel):
     candidate_email: str
     role_title: str
-    score: float                   # 0.0 – 1.0
+    score: float                  
     passed: bool
     rules_passed: list[str]
     rules_failed: list[str]
     improvement_tips: list[str]
-    report_path: Optional[str]     # path to generated PDF
+    report_path: Optional[str]    
 
-
-# ──────────────────────────────────────────────────────────
 # Health Check
-# ──────────────────────────────────────────────────────────
-
 @app.get("/")
 async def root():
     return {"status": "HireWise API is running", "version": "1.0.0"}
@@ -73,11 +59,7 @@ async def root():
 async def health():
     return {"status": "ok"}
 
-
-# ──────────────────────────────────────────────────────────
 # Company Routes
-# ──────────────────────────────────────────────────────────
-
 @app.get("/roles")
 async def list_roles():
     """Return the 5 supported job roles."""
@@ -91,13 +73,8 @@ async def list_roles():
         ]
     }
 
-
 @app.post("/roles/create")
 async def create_role(job: JobRole):
-    """
-    Company posts a job role.
-    In this prototype, roles are predefined. Custom rules can extend defaults.
-    """
     supported = {
         "Software Engineer", "Data Analyst", "Web Developer",
         "Cybersecurity Analyst", "Machine Learning Engineer"
@@ -113,11 +90,7 @@ async def create_role(job: JobRole):
         "role": job.model_dump(),
     }
 
-
-# ──────────────────────────────────────────────────────────
 # Candidate Routes
-# ──────────────────────────────────────────────────────────
-
 @app.post("/apply", response_model=EvaluationResult)
 async def apply(
     role_title: str,
@@ -135,7 +108,7 @@ async def apply(
       7. Send email
       8. Return result
     """
-    # ── 1. Save PDF to temp file ───────────────────────────
+    # Save PDF to temp file 
     if cv_file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files accepted.")
 
@@ -144,27 +117,27 @@ async def apply(
         tmp_path = tmp.name
 
     try:
-        # ── 2. Parse CV ───────────────────────────────────
+        # Parse CV 
         candidate_facts = parse_cv(tmp_path)
         candidate_facts["email"] = candidate_email
         candidate_facts["role"] = role_title
 
-        # ── 3. Expert system evaluation ───────────────────
+        #Expert system evaluation
         engine_result = evaluate_candidate(candidate_facts, role_title)
 
-        # ── 4. Fuzzy scoring overlay ──────────────────────
+        #Fuzzy scoring overlay
         final_score = fuzzy_score(engine_result, candidate_facts, role_title)
 
         passed = final_score >= PASS_THRESHOLD
 
-        # ── 5. RAG improvement tips ───────────────────────
+        #RAG improvement tips
         tips = get_improvement_tips(
             role=role_title,
             failed_rules=engine_result["rules_failed"],
             candidate_facts=candidate_facts,
         ) if not passed else []
 
-        # ── 6. Generate PDF report ────────────────────────
+        # Generate PDF report
         report_path = generate_report(
             candidate_facts=candidate_facts,
             engine_result=engine_result,
@@ -173,7 +146,7 @@ async def apply(
             role=role_title,
         )
 
-        # ── 7. Send email ─────────────────────────────────
+        #Send email
         send_result_email(
             to_email=candidate_email,
             passed=passed,
@@ -182,7 +155,7 @@ async def apply(
             report_path=report_path if not passed else None,
         )
 
-        # ── 8. Return result ──────────────────────────────
+        #Return result 
         return EvaluationResult(
             candidate_email=candidate_email,
             role_title=role_title,
@@ -195,7 +168,7 @@ async def apply(
         )
 
     finally:
-        os.unlink(tmp_path)   # clean up temp PDF
+        os.unlink(tmp_path)  
 
 
 @app.post("/parse-cv")
@@ -214,10 +187,6 @@ async def parse_cv_only(cv_file: UploadFile = File(...)):
     finally:
         os.unlink(tmp_path)
 
-
-# ──────────────────────────────────────────────────────────
-# Dev entry point
-# ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import uvicorn

@@ -22,7 +22,7 @@ SKILL_KEYWORDS: dict[str, list[str]] = {
     "python": ["python"],
     "java": ["java"],
     "javascript": ["javascript", "js"],
-    "typescript": ["typescript", "ts"],
+    "typescript": ["typescript"],
     "c++": ["c++", "cpp"],
     "c#": ["c#", "csharp"],
     "sql": ["sql", "mysql", "postgresql", "sqlite", "pl/sql"],
@@ -39,7 +39,7 @@ SKILL_KEYWORDS: dict[str, list[str]] = {
     "pandas": ["pandas"],
     "numpy": ["numpy"],
     "sklearn": ["scikit-learn", "sklearn"],
-    "tensorflow": ["tensorflow", "tf"],
+    "tensorflow": ["tensorflow"],
     "pytorch": ["pytorch", "torch"],
     "keras": ["keras"],
     "matplotlib": ["matplotlib", "seaborn", "plotly"],
@@ -149,7 +149,7 @@ def _extract_experience(text: str) -> float:
         if match:
             return float(match.group(1))
 
-    year_ranges = re.findall(r"(\d{4})\s*[-–]\s*(present|current|now|\d{4})", text_lower)
+    year_ranges = re.findall(r"(\d{4})\s*[-–‐‑]\s*(present|current|now|\d{4})", text_lower)
     durations = []
     for start, end in year_ranges:
         start_yr = int(start)
@@ -168,7 +168,7 @@ def _extract_projects(text: str) -> list[str]:
         if not stripped:
             continue
         heading_lower = stripped.lower()
-        if re.match(r"(personal\s+)?projects?(\s+&\s+\w+)?", heading_lower):
+        if re.search(r"projects?", heading_lower):
             in_section = True
             continue
         if in_section and re.match(
@@ -210,7 +210,7 @@ def _extract_ner_entities(text: str, entity_type: str = "ORG") -> list[str]:
         try:
             results = ner_pipeline(chunk)
             for ent in results:
-                if ent["entity_group"] == entity_type and ent["score"] > 0.85:
+                if ent["entity_group"] == entity_type and ent["score"] > 0.92:
                     entities.add(ent["word"].strip())
         except Exception as e:
             print(f"[cv_parser] NER chunk error: {e}")
