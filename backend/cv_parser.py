@@ -151,7 +151,7 @@ def _extract_via_gemini(raw_text: str) -> dict[str, list[str]]:
 
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+        f"gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     )
 
     payload = {
@@ -165,16 +165,18 @@ def _extract_via_gemini(raw_text: str) -> dict[str, list[str]]:
         "generationConfig": {
             "responseMimeType": "application/json",
             "temperature": 0.1,
-            "maxOutputTokens": 1000
+            "maxOutputTokens": 3000
         }
     }
 
+    # Retry up to 3 times on 429, with increasing wait: 5s → 15s → 30s
     retry_delays = [5, 15, 30]
 
     for attempt, delay in enumerate(retry_delays, start=1):
         try:
             response = httpx.post(url, json=payload, timeout=30.0)
 
+            # Handle 429 rate limit specifically — wait and retry
             if response.status_code == 429:
                 if attempt < len(retry_delays):
                     print(f"[cv_parser] Gemini rate limited (429). "
@@ -219,6 +221,8 @@ def _extract_via_gemini(raw_text: str) -> dict[str, list[str]]:
 
     return _extract_fallback(raw_text)
 
+# RULE-BASED FALLBACK
+# Used when Gemini is unavailable (429, no key, network error).
 _BULLET_CHARS  = frozenset("-•*▪●·◦–•▪")
 _DESC_VERBS    = re.compile(
     r"^(a|an|the|this|developed|implemented|created|designed|built|used|"
@@ -244,7 +248,6 @@ _SECTION_MAP = [
     (r"skill|technical|certification",     "misc"),
     (r"summary|objective|profile",        "summary"),
 ]
-
 
 def _segment_cv(text: str) -> dict[str, list[str]]:
     segments: dict[str, list[str]] = {
@@ -289,7 +292,7 @@ def _fallback_projects(project_lines: list[str]) -> list[str]:
             continue
 
         if stripped[0] in _BULLET_CHARS:
-            rest = stripped[1:].strip() 
+            rest = stripped[1:].strip()  
             if ":" in rest:
                 candidate = rest.split(":")[0].strip()
                 candidate = re.sub(r"\s*\([^)]*\)\s*$", "", candidate).strip()
@@ -356,7 +359,6 @@ def _fallback_orgs(experience_lines: list[str], full_text: str) -> list[str]:
         suffix_match = _CORP_SUFFIX.search(stripped)
         if suffix_match:
             candidate = stripped[:suffix_match.end()].strip().rstrip(",. ")
-            # Must be a short proper-noun-like name, not a sentence fragment
             words_before = candidate.split()
             if (len(candidate) >= 3
                     and len(words_before) <= 6
@@ -400,7 +402,6 @@ def _fallback_orgs(experience_lines: list[str], full_text: str) -> list[str]:
                     and not any(t in ent_text.lower() for t in _JOB_TITLE_WORDS)):
                 entities.add(ent_text)
 
-    # Remove fragments that are substrings of longer entries
     sorted_by_length = sorted(entities, key=len, reverse=True)
     unique: list[str] = []
     for org in sorted_by_length:
@@ -421,8 +422,7 @@ def _extract_skills(text: str) -> list[str]:
                 break
     return sorted(found)
 
-
-#EDUCATION (full text, keyword matching)
+# STEP 4: EDUCATION (full text, keyword matching)
 def _extract_education(text: str) -> str:
     text_lower = text.lower()
     for level in ["phd", "masters", "bachelors", "associate", "diploma"]:
@@ -431,7 +431,7 @@ def _extract_education(text: str) -> str:
                 return level
     return "unknown"
 
-#EXPERIENCE (full text, date math)
+# STEP 5: EXPERIENCE (full text, date math)
 def _extract_experience(text: str) -> float:
     text_lower    = text.lower()
     current_year  = datetime.datetime.now().year
@@ -454,8 +454,7 @@ def _extract_experience(text: str) -> float:
 
     return float(max(durations)) if durations else 0.0
 
-
-# CERTIFICATIONS (full text, pattern match)
+# STEP 6: CERTIFICATIONS (full text, pattern match)
 def _extract_certifications(text: str) -> list[str]:
     cert_patterns = [
         r"aws\s+certified[\w\s]+",
