@@ -39,15 +39,20 @@ class JobRole(BaseModel):
     custom_rules: Optional[dict] = {} 
 
 
+class RuleResult(BaseModel):
+    rule: str
+    weight: float
+    description: str
+
 class EvaluationResult(BaseModel):
     candidate_email: str
     role_title: str
-    score: float                  
+    score: float
     passed: bool
-    rules_passed: list[str]
-    rules_failed: list[str]
+    rules_passed: list[RuleResult]   # ← FIXED
+    rules_failed: list[RuleResult]   # ← FIXED
     improvement_tips: list[str]
-    report_path: Optional[str]    
+    report_path: str   
 
 # Health Check
 @app.get("/")
