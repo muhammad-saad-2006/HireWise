@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import tempfile
@@ -21,6 +22,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
+reports_dir = os.path.join(os.path.dirname(__file__), "reports")
+os.makedirs(reports_dir, exist_ok=True)
+app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],          
@@ -29,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PASS_THRESHOLD = float(os.getenv("PASS_THRESHOLD", 0.90))
+PASS_THRESHOLD = float(os.getenv("PASS_THRESHOLD", 0.75))
 
 # Pydantic Models
 class JobRole(BaseModel):

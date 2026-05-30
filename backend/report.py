@@ -335,4 +335,4 @@ def generate_report(
         pass
 
     print(f"[report] PDF generated: {output_path}")
-    return output_path
+    return f"/reports/{filename}"
