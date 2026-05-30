@@ -94,14 +94,13 @@ export default function Home() {
 
           {/* Headline */}
           <h1 style={{ fontSize: 'clamp(48px, 8vw, 96px)', letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 24, maxWidth: 900 }}>
-            Hire the right<br />
+            Evaluate the CV for<br />
             <span style={{ color: 'var(--accent)' }}>{displayed}</span>
             <span style={{ color: 'var(--accent)', animation: 'pulse 1s infinite' }}>|</span>
           </h1>
 
           <p style={{ fontSize: 18, color: 'var(--text-secondary)', maxWidth: 560, lineHeight: 1.7, marginBottom: 48, fontWeight: 300 }}>
-            Expert system meets fuzzy logic. Upload a CV, get an instant AI evaluation
-            with explainable scores, skill gap analysis, and personalised improvement tips.
+            Upload your CV, get an instant AI-powered evaluation with explainable scores, skill gap analysis, and personalised improvement tips.
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

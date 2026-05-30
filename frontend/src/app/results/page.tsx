@@ -291,9 +291,11 @@ function ResultsContent() {
         <Link href="/apply">
           <button className="btn-accent">Evaluate Another CV →</button>
         </Link>
-        <button className="btn-ghost" onClick={() => window.print()}>
-          Download Results
-        </button>
+        {data.report_path && (
+          <a href={`http://localhost:8000${data.report_path}`} target="_blank" rel="noreferrer">
+            <button className="btn-ghost">Download PDF Report</button>
+          </a>
+        )}
       </div>
     </div>
   )
