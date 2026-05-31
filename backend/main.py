@@ -38,9 +38,6 @@ app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
 
 PASS_THRESHOLD = float(os.getenv("PASS_THRESHOLD", 0.75))
 
-# ─────────────────────────────────────────────
-# PERSISTENT COMPANY STORAGE (JSON file)
-# ─────────────────────────────────────────────
 
 COMPANIES_FILE = os.path.join(os.path.dirname(__file__), "companies.json")
 
@@ -74,17 +71,13 @@ ROLE_RULE_KEYS: dict[str, list[str]] = {
     "machine learning engineer":  ["python_2yr","sklearn","dl_framework","pandas","numpy","statistics","nlp","git","sql","mlops","edu_bachelors","projects_2"],
 }
 
-# ─────────────────────────────────────────────
 # PYDANTIC MODELS
-# ─────────────────────────────────────────────
-
 class JobRole(BaseModel):
     company_name: str
     role_title: str
     description: Optional[str] = ""
     contact_email: str
     custom_threshold: Optional[float] = None
-    # Rules the company wants DISABLED (empty = use all rules)
     disabled_rules: Optional[list[str]] = []
 
 class RuleResult(BaseModel):
@@ -103,10 +96,7 @@ class EvaluationResult(BaseModel):
     improvement_tips: list[str]
     report_path: str
 
-# ─────────────────────────────────────────────
 # HEALTH
-# ─────────────────────────────────────────────
-
 @app.get("/")
 async def root():
     return {"status": "HireWise API is running", "version": "1.0.0"}
@@ -119,17 +109,13 @@ async def health():
 async def list_roles():
     return {"roles": [r.title() for r in SUPPORTED_ROLES]}
 
-# ─────────────────────────────────────────────
 # COMPANY ROUTES
-# ─────────────────────────────────────────────
-
 @app.post("/companies/create")
 async def create_company(job: JobRole):
     role_key = job.role_title.strip().lower()
     if role_key not in SUPPORTED_ROLES:
         raise HTTPException(status_code=400, detail=f"Role '{job.role_title}' not supported.")
 
-    # Validate disabled rules are actual rules for this role
     valid_rules = ROLE_RULE_KEYS.get(role_key, [])
     invalid = [r for r in (job.disabled_rules or []) if r not in valid_rules]
     if invalid:
@@ -149,19 +135,16 @@ async def create_company(job: JobRole):
     _save_companies(_companies)
     return {"message": f"Company '{job.company_name}' registered", "company": company}
 
-
 @app.get("/companies")
 async def get_all_companies():
     active = [c for c in _companies if c.get("active", True)]
     return {"companies": active}
-
 
 @app.get("/companies/role/{role_title}")
 async def get_companies_by_role(role_title: str):
     role_key = role_title.strip().lower()
     matches = [c for c in _companies if c["role_title"] == role_key and c.get("active", True)]
     return {"companies": matches, "role": role_key, "count": len(matches)}
-
 
 @app.get("/companies/rules/{role_title}")
 async def get_role_rules(role_title: str):
@@ -182,10 +165,7 @@ async def delete_company(company_id: int):
     raise HTTPException(status_code=404, detail=f"Company ID {company_id} not found")
 
 
-# ─────────────────────────────────────────────
 # CANDIDATE APPLY
-# ─────────────────────────────────────────────
-
 @app.post("/apply", response_model=EvaluationResult)
 async def apply(
     role_title: str,
@@ -196,7 +176,6 @@ async def apply(
     if cv_file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files accepted.")
 
-    # Resolve company
     company = None
     if company_id:
         matches = [c for c in _companies if c["id"] == company_id and c.get("active", True)]
