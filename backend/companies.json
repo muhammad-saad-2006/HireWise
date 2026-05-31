@@ -12,5 +12,17 @@
       "rest_api"
     ],
     "active": false
+  },
+  {
+    "id": 2,
+    "company_name": "DigiSoft Pvt Limited",
+    "role_title": "data analyst",
+    "description": "we need a data analyst",
+    "contact_email": "saad2006isl@gmail.com",
+    "threshold": 0.7,
+    "disabled_rules": [
+      "r_language"
+    ],
+    "active": true
   }
 ]

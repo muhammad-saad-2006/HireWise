@@ -68,16 +68,7 @@ def evaluate_candidate(
     role_name: str,
     disabled_rules: list[str] = [],
 ) -> dict:
-    """
-    Evaluate CV against role rules.
-
-    Parameters
-    ----------
-    cv_facts       : dict from parse_cv()
-    role_name      : e.g. "software engineer"
-    disabled_rules : list of rule name strings to skip
-                     e.g. ["cloud", "java"] — company chose not to require these
-    """
+    
     role_key = role_name.strip().lower()
     all_rules = ROLE_RULES.get(role_key)
 

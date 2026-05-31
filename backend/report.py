@@ -3,6 +3,8 @@ import io
 import tempfile
 from datetime import datetime
 
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
@@ -299,7 +301,9 @@ def generate_report(
     cv_data = [
         ["Education",   candidate_facts.get("education_level", "N/A").title()],
         ["Experience",  f"{candidate_facts.get('years_experience', 0)} years"],
-        ["Skills",      ", ".join(candidate_facts.get("skills", []))],
+        ["Skills", Paragraph(", ".join(candidate_facts.get("skills", [])),
+            styles["Normal"]
+        )],
         ["Projects",    str(len(candidate_facts.get("projects", []))) + " detected"],
         ["Certifications", str(len(candidate_facts.get("certifications", []))) + " detected"],
     ]
