@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "company_name": "Systems Limited",
+    "role_title": "software engineer",
+    "description": "",
+    "contact_email": "saad2006isl@gmail.com",
+    "threshold": 0.8,
+    "disabled_rules": [
+      "cloud",
+      "python_2yr",
+      "rest_api"
+    ],
+    "active": false
+  }
+]

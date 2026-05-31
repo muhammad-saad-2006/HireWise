@@ -1,32 +1,31 @@
+# engine.py — HireWise Expert System Engine
+# Supports disabled_rules: company can exclude specific rules from evaluation
+
 from experta import *
 from rules import ROLE_RULES
 
-# FACT CLASSES
+
 class HasSkill(Fact):
-    """One fact per detected skill.  HasSkill(name="python")"""
     pass
 
 class Experience(Fact):
-    """Total years of experience.  Experience(years=3.5)"""
     pass
 
 class Education(Fact):
-    """Highest education level.  Education(level="masters")"""
     pass
 
 class ProjectCount(Fact):
-    """Number of listed projects.  ProjectCount(count=4)"""
     pass
 
 class HasCertification(Fact):
-    """One fact per certification string.  HasCertification(name="CEH")"""
     pass
 
-# KNOWLEDGE ENGINE
+
 class CandidateEngine(KnowledgeEngine):
+
     def __init__(self, role_rules: list[dict]):
         super().__init__()
-        self._role_rules = role_rules   # list of rule dicts from rules.py
+        self._role_rules = role_rules
         self._fired:   list[dict] = []
         self._unfired: list[dict] = []
 
@@ -50,7 +49,6 @@ class CandidateEngine(KnowledgeEngine):
         total_weight = sum(r["weight"] for r in self._role_rules)
         fired_weight = sum(r["weight"] for r in self._fired)
         raw_score    = round(fired_weight / total_weight, 4) if total_weight else 0.0
-
         return {
             "raw_score":    raw_score,
             "passed":       raw_score >= 0.90,
@@ -64,18 +62,36 @@ class CandidateEngine(KnowledgeEngine):
             },
         }
 
-# PUBLIC FUNCTION  (called by main.py)
-def evaluate_candidate(cv_facts: dict, role_name: str) -> dict:
+
+def evaluate_candidate(
+    cv_facts: dict,
+    role_name: str,
+    disabled_rules: list[str] = [],
+) -> dict:
+    """
+    Evaluate CV against role rules.
+
+    Parameters
+    ----------
+    cv_facts       : dict from parse_cv()
+    role_name      : e.g. "software engineer"
+    disabled_rules : list of rule name strings to skip
+                     e.g. ["cloud", "java"] — company chose not to require these
+    """
     role_key = role_name.strip().lower()
-    role_rules = ROLE_RULES.get(role_key)
+    all_rules = ROLE_RULES.get(role_key)
 
-    if role_rules is None:
-        raise ValueError(
-            f"Unknown role '{role_name}'. "
-            f"Supported: {list(ROLE_RULES.keys())}"
-        )
+    if all_rules is None:
+        raise ValueError(f"Unknown role '{role_name}'. Supported: {list(ROLE_RULES.keys())}")
 
-    engine = CandidateEngine(role_rules)
+    # Filter out rules the company has disabled
+    disabled_set = set(disabled_rules)
+    active_rules = [r for r in all_rules if r["name"] not in disabled_set]
+
+    if disabled_set:
+        print(f"[engine] Role '{role_key}' — {len(disabled_set)} rules disabled by company: {disabled_set}")
+
+    engine = CandidateEngine(active_rules)
     engine.reset()
     engine.run()
 
@@ -90,5 +106,4 @@ def evaluate_candidate(cv_facts: dict, role_name: str) -> dict:
         engine.declare(HasCertification(name=cert.strip()))
 
     engine.evaluate(cv_facts)
-
     return engine.get_result()

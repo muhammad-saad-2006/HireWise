@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 import tempfile
 import os
+import json
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -30,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve generated PDF reports as static files
+# Serve generated PDF reports
 reports_dir = os.path.join(os.path.dirname(__file__), "reports")
 os.makedirs(reports_dir, exist_ok=True)
 app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
@@ -38,11 +39,23 @@ app.mount("/reports", StaticFiles(directory=reports_dir), name="reports")
 PASS_THRESHOLD = float(os.getenv("PASS_THRESHOLD", 0.75))
 
 # ─────────────────────────────────────────────
-# IN-MEMORY COMPANY STORE
-# In a real system this would be a database.
-# For the demo this persists as long as the server runs.
+# PERSISTENT COMPANY STORAGE (JSON file)
 # ─────────────────────────────────────────────
-_companies: list[dict] = []
+
+COMPANIES_FILE = os.path.join(os.path.dirname(__file__), "companies.json")
+
+def _load_companies() -> list[dict]:
+    if os.path.exists(COMPANIES_FILE):
+        with open(COMPANIES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def _save_companies(companies: list[dict]) -> None:
+    with open(COMPANIES_FILE, "w", encoding="utf-8") as f:
+        json.dump(companies, f, indent=2, ensure_ascii=False)
+
+# Load on startup
+_companies: list[dict] = _load_companies()
 
 SUPPORTED_ROLES = {
     "software engineer",
@@ -50,6 +63,15 @@ SUPPORTED_ROLES = {
     "web developer",
     "cybersecurity analyst",
     "machine learning engineer",
+}
+
+# All rules per role — companies can disable any of these
+ROLE_RULE_KEYS: dict[str, list[str]] = {
+    "software engineer":          ["python_2yr","java","javascript","sql","git","docker","rest_api","linux","edu_bachelors","exp_2yr","projects_2","cloud"],
+    "data analyst":               ["sql_2yr","python","excel","pandas","statistics","data_wrangling","visualization","r_language","edu_bachelors","exp_1yr","projects_1","database"],
+    "web developer":              ["html","css","js_2yr","react","nodejs","git","rest_api","projects_3","database","edu_diploma","exp_1yr","typescript"],
+    "cybersecurity analyst":      ["network_security","linux","python","pen_testing","cryptography","siem","vuln_assessment","owasp","bash","edu_bachelors","exp_2yr","certifications"],
+    "machine learning engineer":  ["python_2yr","sklearn","dl_framework","pandas","numpy","statistics","nlp","git","sql","mlops","edu_bachelors","projects_2"],
 }
 
 # ─────────────────────────────────────────────
@@ -60,8 +82,10 @@ class JobRole(BaseModel):
     company_name: str
     role_title: str
     description: Optional[str] = ""
-    contact_email: str                    # Company email for receiving applications
-    custom_threshold: Optional[float] = None  # Override global threshold (0.0–1.0)
+    contact_email: str
+    custom_threshold: Optional[float] = None
+    # Rules the company wants DISABLED (empty = use all rules)
+    disabled_rules: Optional[list[str]] = []
 
 class RuleResult(BaseModel):
     rule: str
@@ -91,10 +115,6 @@ async def root():
 async def health():
     return {"status": "ok"}
 
-# ─────────────────────────────────────────────
-# ROLES
-# ─────────────────────────────────────────────
-
 @app.get("/roles")
 async def list_roles():
     return {"roles": [r.title() for r in SUPPORTED_ROLES]}
@@ -107,38 +127,63 @@ async def list_roles():
 async def create_company(job: JobRole):
     role_key = job.role_title.strip().lower()
     if role_key not in SUPPORTED_ROLES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Role '{job.role_title}' not supported. Choose from: {list(SUPPORTED_ROLES)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Role '{job.role_title}' not supported.")
+
+    # Validate disabled rules are actual rules for this role
+    valid_rules = ROLE_RULE_KEYS.get(role_key, [])
+    invalid = [r for r in (job.disabled_rules or []) if r not in valid_rules]
+    if invalid:
+        raise HTTPException(status_code=400, detail=f"Unknown rules: {invalid}")
+
     company = {
-        "id": len(_companies) + 1,
-        "company_name": job.company_name,
-        "role_title": role_key,
-        "description": job.description,
-        "contact_email": job.contact_email,
-        "threshold": job.custom_threshold if job.custom_threshold else PASS_THRESHOLD,
+        "id":               len(_companies) + 1,
+        "company_name":     job.company_name,
+        "role_title":       role_key,
+        "description":      job.description,
+        "contact_email":    job.contact_email,
+        "threshold":        job.custom_threshold if job.custom_threshold else PASS_THRESHOLD,
+        "disabled_rules":   job.disabled_rules or [],
+        "active":           True,
     }
     _companies.append(company)
-    return {"message": f"Company '{job.company_name}' registered for role '{role_key}'", "company": company}
+    _save_companies(_companies)
+    return {"message": f"Company '{job.company_name}' registered", "company": company}
 
 
 @app.get("/companies")
 async def get_all_companies():
-    """Return all registered companies."""
-    return {"companies": _companies}
+    active = [c for c in _companies if c.get("active", True)]
+    return {"companies": active}
 
 
 @app.get("/companies/role/{role_title}")
 async def get_companies_by_role(role_title: str):
-    """Return companies hiring for a specific role."""
     role_key = role_title.strip().lower()
-    matches = [c for c in _companies if c["role_title"] == role_key]
+    matches = [c for c in _companies if c["role_title"] == role_key and c.get("active", True)]
     return {"companies": matches, "role": role_key, "count": len(matches)}
 
 
+@app.get("/companies/rules/{role_title}")
+async def get_role_rules(role_title: str):
+    """Return all available rule keys for a role — used by frontend rule selector."""
+    role_key = role_title.strip().lower()
+    rules = ROLE_RULE_KEYS.get(role_key, [])
+    return {"role": role_key, "rules": rules}
+
+
+@app.delete("/companies/{company_id}")
+async def delete_company(company_id: int):
+    """Company deletes their own job posting."""
+    for c in _companies:
+        if c["id"] == company_id:
+            c["active"] = False
+            _save_companies(_companies)
+            return {"message": f"Company ID {company_id} removed successfully"}
+    raise HTTPException(status_code=404, detail=f"Company ID {company_id} not found")
+
+
 # ─────────────────────────────────────────────
-# CANDIDATE ROUTES
+# CANDIDATE APPLY
 # ─────────────────────────────────────────────
 
 @app.post("/apply", response_model=EvaluationResult)
@@ -148,23 +193,13 @@ async def apply(
     company_id: Optional[int] = None,
     cv_file: UploadFile = File(...),
 ):
-    """
-    Full pipeline:
-    1. Parse CV
-    2. Run expert system
-    3. Fuzzy scoring
-    4. RAG improvement tips
-    5. Generate PDF report
-    6. Send email (invite or rejection)
-    7. Return result
-    """
     if cv_file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files accepted.")
 
     # Resolve company
     company = None
     if company_id:
-        matches = [c for c in _companies if c["id"] == company_id]
+        matches = [c for c in _companies if c["id"] == company_id and c.get("active", True)]
         if not matches:
             raise HTTPException(status_code=404, detail=f"Company ID {company_id} not found.")
         company = matches[0]
@@ -172,12 +207,12 @@ async def apply(
 
     role_key = role_title.strip().lower()
     if role_key not in SUPPORTED_ROLES:
-        raise HTTPException(status_code=400, detail=f"Unknown role '{role_title}'. Supported: {list(SUPPORTED_ROLES)}")
+        raise HTTPException(status_code=400, detail=f"Unknown role '{role_title}'")
 
-    threshold = company["threshold"] if company else PASS_THRESHOLD
-    company_name = company["company_name"] if company else "HireWise"
+    threshold     = company["threshold"]      if company else PASS_THRESHOLD
+    company_name  = company["company_name"]   if company else "HireWise"
+    disabled_rules = company["disabled_rules"] if company else []
 
-    # Save PDF
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         tmp.write(await cv_file.read())
         tmp_path = tmp.name
@@ -186,10 +221,13 @@ async def apply(
         # 1. Parse
         candidate_facts = parse_cv(tmp_path)
         candidate_facts["email"] = candidate_email
-        candidate_facts["role"] = role_key
+        candidate_facts["role"]  = role_key
 
-        # 2. Expert system
-        engine_result = evaluate_candidate(candidate_facts, role_key)
+        # 2. Expert system — pass disabled rules so engine can skip them
+        engine_result = evaluate_candidate(
+            candidate_facts, role_key,
+            disabled_rules=disabled_rules
+        )
 
         # 3. Fuzzy score
         final_score = fuzzy_score(engine_result, candidate_facts, role_key)
@@ -222,7 +260,6 @@ async def apply(
             company_email=company["contact_email"] if company else None,
         )
 
-        # 7. Return
         return EvaluationResult(
             candidate_email=candidate_email,
             role_title=role_key,
@@ -241,7 +278,6 @@ async def apply(
 
 @app.post("/parse-cv")
 async def parse_cv_only(cv_file: UploadFile = File(...)):
-    """Debug endpoint — returns raw extracted facts."""
     if cv_file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF files accepted.")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
