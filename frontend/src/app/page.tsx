@@ -233,7 +233,7 @@ export default function Home() {
       <footer style={{ borderTop: '1px solid var(--border)', padding: '32px 24px', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <span style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 16 }}>HireWise</span>
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--text-muted)' }}>BS CS AI Term Project — 2026</span>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--text-muted)' }}>Designed & Developed by Muhammad Saad</span>
         </div>
       </footer>
     </div>
