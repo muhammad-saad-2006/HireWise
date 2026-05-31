@@ -1,13 +1,3 @@
-# mailer.py — HireWise Gmail Email Sender
-# Uses Gmail SMTP with App Password (no OAuth needed)
-# Setup:
-#   1. Enable 2-Step Verification on your Google account
-#   2. Go to myaccount.google.com → Security → App Passwords
-#   3. Generate a password for Mail
-#   4. Add to .env:
-#      GMAIL_USER=youremail@gmail.com
-#      GMAIL_APP_PASSWORD=your16charpassword
-
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -19,11 +9,6 @@ load_dotenv()
 GMAIL_USER         = os.getenv("GMAIL_USER", "")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
 
-
-# ─────────────────────────────────────────────
-# PUBLIC FUNCTION — called by main.py
-# ─────────────────────────────────────────────
-
 def send_result_email(
     to_email:      str,
     passed:        bool,
@@ -33,20 +18,6 @@ def send_result_email(
     company_name:  str = "HireWise",
     company_email: str | None = None,
 ) -> None:
-    """
-    Send result email to candidate.
-    If candidate passed and company_email is set, also notify the company.
-
-    Parameters
-    ----------
-    to_email      : candidate email address
-    passed        : True = interview invite, False = rejection
-    score         : final blended score 0.0–1.0
-    role          : role title string
-    report_path   : URL path to PDF report e.g. "/reports/report_abc.pdf"
-    company_name  : name of the company (default HireWise)
-    company_email : company contact email for pass notification
-    """
     status = "INVITE" if passed else "REJECTION"
     print(f"[mailer] Preparing {status} email → {to_email} | "
           f"role={role} | score={score:.1%} | company={company_name}")
@@ -59,7 +30,6 @@ def send_result_email(
     role_display = role.title()
     score_pct    = f"{score:.1%}"
 
-    # ── 1. Send to candidate ──────────────────────────────────────────
     candidate_msg = _build_candidate_email(
         to_email=to_email,
         passed=passed,
@@ -71,7 +41,6 @@ def send_result_email(
     _send_email(candidate_msg, to_email)
     print(f"[mailer] Candidate email sent → {to_email}")
 
-    # ── 2. Notify company if candidate passed ─────────────────────────
     if passed and company_email:
         company_msg = _build_company_notification(
             to_email=company_email,
@@ -82,11 +51,6 @@ def send_result_email(
         )
         _send_email(company_msg, company_email)
         print(f"[mailer] Company notification sent → {company_email}")
-
-
-# ─────────────────────────────────────────────
-# EMAIL BUILDERS
-# ─────────────────────────────────────────────
 
 def _build_candidate_email(
     to_email: str,
@@ -152,7 +116,6 @@ def _build_candidate_email(
 </html>"""
 
     else:
-        # Build PDF link if available
         pdf_section = ""
         if report_path:
             pdf_url = f"http://localhost:8000{report_path}"
@@ -309,11 +272,6 @@ def _build_company_notification(
 
     msg.attach(MIMEText(html, "html"))
     return msg
-
-
-# ─────────────────────────────────────────────
-# SMTP SENDER
-# ─────────────────────────────────────────────
 
 def _send_email(msg: MIMEMultipart, to: str) -> None:
     """Send a single email via Gmail SMTP SSL."""
