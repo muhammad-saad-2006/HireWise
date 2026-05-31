@@ -1,6 +1,3 @@
-# engine.py — HireWise Expert System Engine
-# Supports disabled_rules: company can exclude specific rules from evaluation
-
 from experta import *
 from rules import ROLE_RULES
 
