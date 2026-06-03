@@ -123,10 +123,7 @@ python -m venv .venv
 .venv\Scripts\activate        # Windows
 # source .venv/bin/activate   # Mac/Linux
 
-pip install fastapi uvicorn python-dotenv pdfplumber httpx
-pip install experta scikit-fuzzy numpy pandas
-pip install reportlab plotly kaleido
-pip install python-multipart
+pip install -r requirements.txt
 ```
 
 ### 3. Create the `.env` file
@@ -165,6 +162,8 @@ npm run dev
 ```
 
 Frontend runs at `http://localhost:3000`. 
+
+If port 3000 is busy run this command `npm run dev -- --port 3001`
 
 ---
 
